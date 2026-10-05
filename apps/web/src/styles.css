@@ -140,3 +140,6 @@ td.wrap { white-space: normal; min-width: 220px; }
 .theme button { font: inherit; font-size: 12px; background: none; border: 0; padding: 4px 10px; color: var(--text-secondary); cursor: pointer; }
 .theme button + button { border-left: 1px solid var(--axis); }
 .theme button[aria-pressed='true'] { background: var(--hover); color: var(--text); font-weight: 600; }
+.table-wrap.tall { max-height: 560px; overflow-y: auto; }
+.group-row th { background: var(--hover); color: var(--text); font-weight: 600; position: static; padding: 8px 12px; }
+.table-filters { margin-bottom: 12px; }

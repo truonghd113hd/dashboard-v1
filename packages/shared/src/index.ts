@@ -87,6 +87,16 @@ export interface TaskOverdueRow {
   status: string;
   daysLate: number;
 }
+export interface TaskDetail {
+  task: string;
+  description: string;
+  category: string;
+  assignee: string;
+  status: string;
+  priority: string;
+  due: string;
+  overdue: boolean;
+}
 /** Dữ liệu cho trang "Tổng quan" (task board): tính từ dataset All Tasks. */
 export interface TaskDashboard {
   today: string;
@@ -103,5 +113,7 @@ export interface TaskDashboard {
   priorityMissing: number;
   byDue: { date: string; count: number }[];
   overdue: TaskOverdueRow[];
+  /** Toàn bộ task sau khi lọc, đã sắp theo phân loại (nhiều task nhất trước) rồi theo hạn. */
+  tasks: TaskDetail[];
   options: { status: string[]; label: string[]; assignee: string[]; category: string[] };
 }

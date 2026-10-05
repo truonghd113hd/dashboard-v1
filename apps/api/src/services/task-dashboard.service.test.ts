@@ -14,6 +14,8 @@ const sheet = [
   ['E', '', 'Xanh', '', 'P2', '02/10/2026', 'Đã lưu trữ', '', 'h'],
 ];
 const { dataset: ds } = buildDataset('All Tasks', sheet);
+// P1: A(04/10), B(06/10) · P2: E(02/10), C(01/10) -> C trước E · (Chưa phân loại): D
+const order = ['A', 'B', 'C', 'E', 'D'];
 const dash = (f = {}) => taskDashboard(ds, f, '2026-10-05')!;
 
 describe('buildDataset với tiêu đề phía trên + cột phụ', () => {
@@ -44,6 +46,12 @@ describe('taskDashboard', () => {
     expect(d.byAssignee).toHaveLength(1);
     expect(d.options.assignee).toContain('Xanh');
     expect(dash({ label: 'Tất cả' }).byAssignee).toHaveLength(3);
+  });
+  it('tasks sắp theo phân loại (nhiều task trước) rồi theo hạn, đánh dấu quá hạn', () => {
+    const t = dash().tasks;
+    expect(t.map((x) => x.task)).toEqual(['A', 'B', 'E', 'C', 'D'].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
+    expect(t.find((x) => x.task === 'A')).toMatchObject({ category: 'P1', overdue: true, due: '2026-10-04' });
+    expect(t.find((x) => x.task === 'B')!.overdue).toBe(false);
   });
   it('trả null nếu không phải bảng task', () => {
     expect(taskDashboard(buildDataset('t', [['a', 'b'], ['1', '2']]).dataset, {}, '2026-10-05')).toBeNull();

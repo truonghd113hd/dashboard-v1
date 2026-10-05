@@ -56,27 +56,9 @@ export function TaskOverviewPage({ dataset }: { dataset: string }) {
         <ChartCard title="Task theo phân loại / dự án" rows={d.byCategory} labelOf={(r) => r.label} valueLabel="Số task">
           <BreakdownChart data={d.byCategory} name="Số task" />
         </ChartCard>
-
-        <ChartCard
-          title="Task theo nhãn"
-          subtitle={d.labelMissing ? `${d.labelMissing} task chưa gắn nhãn (không hiển thị)` : undefined}
-          rows={d.byLabel}
-          labelOf={(r) => r.label}
-          valueLabel="Số task"
-        >
-          <BreakdownChart data={d.byLabel} name="Số task" />
-        </ChartCard>
-
-        <ChartCard
-          title="Task theo mức độ ưu tiên"
-          subtitle={d.priorityMissing ? `${d.priorityMissing} task chưa có mức ưu tiên (không hiển thị)` : undefined}
-          rows={d.byPriority}
-          labelOf={(r) => `Mức ${r.label}`}
-          valueLabel="Số task"
-        >
-          <BreakdownChart data={d.byPriority.map((p) => ({ ...p, label: `Mức ${p.label}` }))} name="Số task" />
-        </ChartCard>
       </div>
+
+      <TasksByCategory data={d} />
 
       <ChartCard title="Task theo hạn chót" rows={d.byDue.map((x) => ({ ...x, value: x.count }))} labelOf={(r) => fmtDay(r.date)} valueLabel="Số task" subtitle="Task chưa có hạn không hiển thị">
         <DueChart data={d.byDue} today={d.today} />
@@ -108,7 +90,83 @@ export function TaskOverviewPage({ dataset }: { dataset: string }) {
   );
 }
 
-function AssigneeTable({ data }: { data: NonNullable<ReturnType<typeof useTaskDashboard>['data']> }) {
+type Dash = NonNullable<ReturnType<typeof useTaskDashboard>['data']>;
+type Detail = Dash['tasks'][number];
+const NONE = '(Chưa có)';
+const DUE_ALL = ALL, DUE_OVERDUE = 'Quá hạn', DUE_SET = 'Có hạn', DUE_NONE = 'Chưa có hạn';
+
+/** Bảng chi tiết task, gom theo phân loại / dự án (thứ tự giống biểu đồ phân loại); lọc ngay trên bảng. */
+function TasksByCategory({ data }: { data: Dash }) {
+  const [f, setF] = useState({ category: ALL, assignee: ALL, status: ALL, priority: ALL, due: DUE_ALL });
+
+  // giá trị lọc lấy từ chính danh sách task đang có (đã qua bộ lọc phía trên)
+  const uniq = (pick: (t: Detail) => string) => [...new Set(data.tasks.map(pick))];
+  const opts = {
+    category: data.byCategory.map((c) => c.label),
+    assignee: uniq((t) => t.assignee).sort(),
+    status: data.statusOrder.filter((st) => data.tasks.some((t) => t.status === st)),
+    priority: uniq((t) => t.priority || NONE).sort((a, b) => (a === NONE ? 1 : b === NONE ? -1 : Number(a) - Number(b))),
+  };
+  // nếu giá trị đang chọn không còn tồn tại (do bộ lọc phía trên đổi) thì coi như "Tất cả"
+  const eff = (k: keyof typeof opts) => (opts[k].includes(f[k]) ? f[k] : ALL);
+  const sel = { category: eff('category'), assignee: eff('assignee'), status: eff('status'), priority: eff('priority') };
+
+  const rows = data.tasks.filter(
+    (t) =>
+      (sel.category === ALL || t.category === sel.category) &&
+      (sel.assignee === ALL || t.assignee === sel.assignee) &&
+      (sel.status === ALL || t.status === sel.status) &&
+      (sel.priority === ALL || (t.priority || NONE) === sel.priority) &&
+      (f.due === DUE_ALL || (f.due === DUE_OVERDUE ? t.overdue : f.due === DUE_SET ? !!t.due : !t.due)),
+  );
+  const groups = data.byCategory.map((c) => ({ name: c.label, tasks: rows.filter((t) => t.category === c.label) })).filter((g) => g.tasks.length);
+  const dirty = Object.values(sel).some((v) => v !== ALL) || f.due !== DUE_ALL;
+  const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <div>
+          <h2>Chi tiết task theo phân loại / dự án</h2>
+          <p className="muted">{rows.length}/{data.tasks.length} task · sắp theo hạn chót trong từng nhóm</p>
+        </div>
+      </div>
+      <div className="filters table-filters" aria-label="Lọc bảng chi tiết">
+        <Filter label="Phân loại" value={sel.category} onChange={set('category')} options={opts.category} />
+        <Filter label="Người thực hiện" value={sel.assignee} onChange={set('assignee')} options={opts.assignee} />
+        <Filter label="Trạng thái" value={sel.status} onChange={set('status')} options={opts.status} />
+        <Filter label="Ưu tiên" value={sel.priority} onChange={set('priority')} options={opts.priority} />
+        <Filter label="Hạn" value={f.due} onChange={set('due')} options={[DUE_OVERDUE, DUE_SET, DUE_NONE]} />
+        {dirty && <button className="btn ghost" onClick={() => setF({ category: ALL, assignee: ALL, status: ALL, priority: ALL, due: DUE_ALL })}>Xoá lọc</button>}
+      </div>
+      {rows.length === 0 ? (
+        <p className="muted pad">Không có task nào khớp bộ lọc.</p>
+      ) : (
+        <div className="table-wrap tall">
+          <table>
+            <thead><tr><th>Task</th><th>Người thực hiện</th><th>Trạng thái</th><th className="num">Ưu tiên</th><th>Hạn</th></tr></thead>
+            {groups.map((g) => (
+              <tbody key={g.name}>
+                <tr className="group-row"><th colSpan={5} scope="colgroup">{g.name} <span className="muted">· {g.tasks.length} task</span></th></tr>
+                {g.tasks.map((t, i) => (
+                  <tr key={i}>
+                    <td className="wrap" title={t.description || undefined}>{t.task}</td>
+                    <td>{t.assignee}</td>
+                    <td>{t.status}</td>
+                    <td className="num">{t.priority}</td>
+                    <td className={t.overdue ? 'alert-text' : undefined}>{t.due ? `${t.overdue ? '⚠ ' : ''}${fmtDay(t.due)}` : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AssigneeTable({ data }: { data: Dash }) {
   const cols = data.statusOrder.filter((s) => data.byAssignee.some((a) => a.byStatus[s]));
   return (
     <table>
