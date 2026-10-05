@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+*.log
+.DS_Store
+# data & credentials
+apps/api/data/**
+!apps/api/data/.gitkeep
+credentials/
+*.service-account.json
+credentials.json

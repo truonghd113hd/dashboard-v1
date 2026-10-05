@@ -1,0 +1,25 @@
+# Dùng trên VPS: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Caddy đứng trước, tự cấp HTTPS; app không mở cổng ra ngoài.
+services:
+  dashboard:
+    ports: !reset []
+    expose:
+      - '3001'
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?Đặt DOMAIN trong file .env ở thư mục gốc, vd DOMAIN=dashboard.example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - dashboard
+
+volumes:
+  caddy-data:
+  caddy-config:

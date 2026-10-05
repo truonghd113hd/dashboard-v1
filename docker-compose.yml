@@ -1,0 +1,22 @@
+services:
+  dashboard:
+    build: .
+    image: event-dashboard
+    ports:
+      # trên VPS: HOST_PORT=3100 và BIND_ADDR=127.0.0.1 (chỉ reverse proxy trên máy truy cập được)
+      - '${BIND_ADDR:-0.0.0.0}:${HOST_PORT:-3001}:3001'
+    # GOOGLE_SHEET_ID, GOOGLE_SHEET_TABS, SYNC_INTERVAL_MINUTES... lấy từ apps/api/.env
+    env_file:
+      - path: apps/api/.env
+        required: false
+    environment:
+      DATA_DIR: /data
+      PORT: 3001
+      GOOGLE_SERVICE_ACCOUNT_KEY_FILE: /run/secrets/service-account.json
+    volumes:
+      - dashboard-data:/data
+      - ./apps/api/credentials/service-account.json:/run/secrets/service-account.json:ro
+    restart: unless-stopped
+
+volumes:
+  dashboard-data:
