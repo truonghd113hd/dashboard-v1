@@ -15,7 +15,7 @@ export class SyncService {
   constructor(
     private readonly repo: DatasetRepo,
     private readonly fetchTabs: TabFetcher,
-    private readonly opts: { enabled: boolean; intervalMinutes: number; dataDir: string },
+    private readonly opts: { enabled: boolean; intervalMinutes: number; dataDir: string; ignoreColumns?: string[] },
     private readonly log: { info: (m: string) => void; error: (e: unknown, m: string) => void } = console as never,
   ) {
     this.stateFile = join(opts.dataDir, 'sync-state.json');
@@ -66,7 +66,7 @@ export class SyncService {
       const tabs = await this.fetchTabs();
       const results: SyncState['datasets'] = [];
       for (const tab of tabs) {
-        const { dataset, warnings } = buildDataset(tab.name, tab.values);
+        const { dataset, warnings } = buildDataset(tab.name, tab.values, undefined, { ignoreColumns: this.opts.ignoreColumns });
         const prev = await this.repo.get(tab.name);
         const changed = prev?.hash !== dataset.hash;
         if (changed) await this.repo.save(dataset);

@@ -93,7 +93,6 @@ export interface TaskDetail {
   category: string;
   assignee: string;
   status: string;
-  priority: string;
   due: string;
   overdue: boolean;
 }
@@ -109,8 +108,6 @@ export interface TaskDashboard {
   byCategory: BreakdownItem[];
   byLabel: BreakdownItem[];
   labelMissing: number;
-  byPriority: BreakdownItem[];
-  priorityMissing: number;
   byDue: { date: string; count: number }[];
   overdue: TaskOverdueRow[];
   /** Toàn bộ task sau khi lọc, đã sắp theo phân loại (nhiều task nhất trước) rồi theo hạn. */

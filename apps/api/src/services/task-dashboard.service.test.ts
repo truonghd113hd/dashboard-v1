@@ -26,6 +26,15 @@ describe('buildDataset với tiêu đề phía trên + cột phụ', () => {
   });
 });
 
+describe('ignoreColumns', () => {
+  it('bỏ cột chỉ định (không phân biệt hoa thường), các cột còn lại giữ nguyên dữ liệu', () => {
+    const r = buildDataset('t', sheet, undefined, { ignoreColumns: ['priority'] }).dataset;
+    expect(r.columns.map((c) => c.name)).toEqual(['Task', 'Assignee', 'Label', 'Category', 'Due Date', 'Status']);
+    expect(r.rows[0]).toMatchObject({ Task: 'A', Assignee: 'Dung', Status: 'Cần thực hiện' });
+    expect('Priority' in r.rows[0]!).toBe(false);
+  });
+});
+
 describe('taskDashboard', () => {
   it('đếm trạng thái, tổng không tính lưu trữ, task chưa gán trạng thái', () => {
     const d = dash();
@@ -39,7 +48,6 @@ describe('taskDashboard', () => {
     const d = dash();
     expect(d.byLabel).toEqual([{ label: 'x', value: 2 }, { label: 'y', value: 1 }]);
     expect(d.labelMissing).toBe(3);
-    expect(d.priorityMissing).toBe(3);
   });
   it('bộ lọc áp dụng cho mọi khối nhưng options giữ nguyên', () => {
     const d = dash({ assignee: 'Dung' });

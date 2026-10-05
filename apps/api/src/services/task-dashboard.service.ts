@@ -54,11 +54,9 @@ export function taskDashboard(ds: Dataset, filters: TaskFilters, today: string):
   const statusCount = new Map<string, number>();
   const category = new Map<string, number>();
   const label = new Map<string, number>();
-  const priority = new Map<string, number>();
   const due = new Map<string, number>();
   const assignee = new Map<string, Map<string, number>>();
   let labelMissing = 0;
-  let priorityMissing = 0;
   const overdue: TaskDashboard['overdue'] = [];
   const tasks: TaskDetail[] = [];
 
@@ -71,10 +69,6 @@ export function taskDashboard(ds: Dataset, filters: TaskFilters, today: string):
     if (ls.length) ls.forEach((l) => count(label, l));
     else labelMissing++;
 
-    const p = text(r['Priority']);
-    if (p) count(priority, p);
-    else priorityMissing++;
-
     const a = assigneeOf(r);
     if (!assignee.has(a)) assignee.set(a, new Map());
     count(assignee.get(a)!, status);
@@ -85,7 +79,7 @@ export function taskDashboard(ds: Dataset, filters: TaskFilters, today: string):
       count(due, d);
       if (isOverdue) overdue.push({ task: text(r['Task']), assignee: a, due: d, status, daysLate: dayDiff(d, today) });
     }
-    tasks.push({ task: text(r['Task']), description: text(r['Description']), category: categoryOf(r), assignee: a, status, priority: p, due: d, overdue: isOverdue });
+    tasks.push({ task: text(r['Task']), description: text(r['Description']), category: categoryOf(r), assignee: a, status, due: d, overdue: isOverdue });
   }
 
   const categoryRank = new Map([...category].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([c], i) => [c, i]));
@@ -103,8 +97,6 @@ export function taskDashboard(ds: Dataset, filters: TaskFilters, today: string):
     byCategory: toItems(category).sort(byValueDesc),
     byLabel: toItems(label).sort(byValueDesc),
     labelMissing,
-    byPriority: toItems(priority).sort((a, b) => Number(a.label) - Number(b.label) || a.label.localeCompare(b.label)),
-    priorityMissing,
     byDue: [...due].sort(([a], [b]) => a.localeCompare(b)).map(([date, n]) => ({ date, count: n })),
     tasks,
     overdue: overdue.sort((a, b) => b.daysLate - a.daysLate || a.task.localeCompare(b.task)),

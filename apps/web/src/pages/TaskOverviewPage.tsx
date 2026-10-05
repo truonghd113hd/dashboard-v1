@@ -92,12 +92,13 @@ export function TaskOverviewPage({ dataset }: { dataset: string }) {
 
 type Dash = NonNullable<ReturnType<typeof useTaskDashboard>['data']>;
 type Detail = Dash['tasks'][number];
-const NONE = '(Chưa có)';
+const DEFAULT_STATUS = 'Cần thực hiện';
+const DEFAULT_FILTERS = { category: ALL, assignee: ALL, status: DEFAULT_STATUS, due: ALL };
 const DUE_ALL = ALL, DUE_OVERDUE = 'Quá hạn', DUE_SET = 'Có hạn', DUE_NONE = 'Chưa có hạn';
 
 /** Bảng chi tiết task, gom theo phân loại / dự án (thứ tự giống biểu đồ phân loại); lọc ngay trên bảng. */
 function TasksByCategory({ data }: { data: Dash }) {
-  const [f, setF] = useState({ category: ALL, assignee: ALL, status: ALL, priority: ALL, due: DUE_ALL });
+  const [f, setF] = useState(DEFAULT_FILTERS);
 
   // giá trị lọc lấy từ chính danh sách task đang có (đã qua bộ lọc phía trên)
   const uniq = (pick: (t: Detail) => string) => [...new Set(data.tasks.map(pick))];
@@ -105,22 +106,20 @@ function TasksByCategory({ data }: { data: Dash }) {
     category: data.byCategory.map((c) => c.label),
     assignee: uniq((t) => t.assignee).sort(),
     status: data.statusOrder.filter((st) => data.tasks.some((t) => t.status === st)),
-    priority: uniq((t) => t.priority || NONE).sort((a, b) => (a === NONE ? 1 : b === NONE ? -1 : Number(a) - Number(b))),
   };
   // nếu giá trị đang chọn không còn tồn tại (do bộ lọc phía trên đổi) thì coi như "Tất cả"
   const eff = (k: keyof typeof opts) => (opts[k].includes(f[k]) ? f[k] : ALL);
-  const sel = { category: eff('category'), assignee: eff('assignee'), status: eff('status'), priority: eff('priority') };
+  const sel = { category: eff('category'), assignee: eff('assignee'), status: eff('status') };
 
   const rows = data.tasks.filter(
     (t) =>
       (sel.category === ALL || t.category === sel.category) &&
       (sel.assignee === ALL || t.assignee === sel.assignee) &&
       (sel.status === ALL || t.status === sel.status) &&
-      (sel.priority === ALL || (t.priority || NONE) === sel.priority) &&
       (f.due === DUE_ALL || (f.due === DUE_OVERDUE ? t.overdue : f.due === DUE_SET ? !!t.due : !t.due)),
   );
   const groups = data.byCategory.map((c) => ({ name: c.label, tasks: rows.filter((t) => t.category === c.label) })).filter((g) => g.tasks.length);
-  const dirty = Object.values(sel).some((v) => v !== ALL) || f.due !== DUE_ALL;
+  const dirty = sel.category !== ALL || sel.assignee !== ALL || sel.status !== DEFAULT_STATUS || f.due !== DUE_ALL;
   const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
   return (
@@ -135,25 +134,23 @@ function TasksByCategory({ data }: { data: Dash }) {
         <Filter label="Phân loại" value={sel.category} onChange={set('category')} options={opts.category} />
         <Filter label="Người thực hiện" value={sel.assignee} onChange={set('assignee')} options={opts.assignee} />
         <Filter label="Trạng thái" value={sel.status} onChange={set('status')} options={opts.status} />
-        <Filter label="Ưu tiên" value={sel.priority} onChange={set('priority')} options={opts.priority} />
         <Filter label="Hạn" value={f.due} onChange={set('due')} options={[DUE_OVERDUE, DUE_SET, DUE_NONE]} />
-        {dirty && <button className="btn ghost" onClick={() => setF({ category: ALL, assignee: ALL, status: ALL, priority: ALL, due: DUE_ALL })}>Xoá lọc</button>}
+        {dirty && <button className="btn ghost" onClick={() => setF(DEFAULT_FILTERS)}>Về mặc định</button>}
       </div>
       {rows.length === 0 ? (
         <p className="muted pad">Không có task nào khớp bộ lọc.</p>
       ) : (
         <div className="table-wrap tall">
           <table>
-            <thead><tr><th>Task</th><th>Người thực hiện</th><th>Trạng thái</th><th className="num">Ưu tiên</th><th>Hạn</th></tr></thead>
+            <thead><tr><th>Task</th><th>Người thực hiện</th><th>Trạng thái</th><th>Hạn</th></tr></thead>
             {groups.map((g) => (
               <tbody key={g.name}>
-                <tr className="group-row"><th colSpan={5} scope="colgroup">{g.name} <span className="muted">· {g.tasks.length} task</span></th></tr>
+                <tr className="group-row"><th colSpan={4} scope="colgroup">{g.name} <span className="muted">· {g.tasks.length} task</span></th></tr>
                 {g.tasks.map((t, i) => (
                   <tr key={i}>
                     <td className="wrap" title={t.description || undefined}>{t.task}</td>
                     <td>{t.assignee}</td>
                     <td>{t.status}</td>
-                    <td className="num">{t.priority}</td>
                     <td className={t.overdue ? 'alert-text' : undefined}>{t.due ? `${t.overdue ? '⚠ ' : ''}${fmtDay(t.due)}` : ''}</td>
                   </tr>
                 ))}

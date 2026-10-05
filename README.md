@@ -55,7 +55,7 @@ Quy ước sheet: mỗi **tab = 1 dataset**. Header được tự tìm (bỏ qua
 
 ## Trang Tổng quan (task board)
 
-Tái hiện sheet "Tổng quan" của file Google Sheet hiện tại, dựa trên tab ẩn **All Tasks** (gom từ các tab Backlog / Chờ / Cần thực hiện / Đang tiến hành / Đã hoàn thành / Đã lưu trữ). Cấu hình: `GOOGLE_SHEET_TABS=All Tasks`. Gồm bộ lọc (trạng thái, nhãn, người thực hiện, dự án), số task theo trạng thái, task theo người thực hiện / dự án / nhãn / ưu tiên / hạn chót, và danh sách task quá hạn. Task có cột Status trống được tính riêng thành "Chưa gán trạng thái".
+Tái hiện sheet "Tổng quan" của file Google Sheet hiện tại, dựa trên tab ẩn **All Tasks** (gom từ các tab Backlog / Chờ / Cần thực hiện / Đang tiến hành / Đã hoàn thành / Đã lưu trữ). Cấu hình: `GOOGLE_SHEET_TABS=All Tasks`. Gồm bộ lọc (trạng thái, nhãn, người thực hiện, dự án), số task theo trạng thái, task theo người thực hiện / dự án / hạn chót, bảng chi tiết task theo dự án (mặc định chỉ hiện task "Cần thực hiện", có bộ lọc ngay trên bảng) và danh sách task quá hạn. Task có cột Status trống được tính riêng thành "Chưa gán trạng thái".
 
 Tab **Phân tích** là bộ chart tổng quát cho bất kỳ dataset nào (chọn cột ngày / chỉ số / nhóm).
 

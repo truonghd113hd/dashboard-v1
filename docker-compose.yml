@@ -13,6 +13,8 @@ services:
       DATA_DIR: /data
       PORT: 3001
       GOOGLE_SERVICE_ACCOUNT_KEY_FILE: /run/secrets/service-account.json
+      # cột của sheet không đưa vào dashboard (phân tách bằng dấu phẩy); đổi bằng biến cùng tên trong .env gốc
+      GOOGLE_SHEET_IGNORE_COLUMNS: ${GOOGLE_SHEET_IGNORE_COLUMNS-Priority}
     volumes:
       - dashboard-data:/data
       - ./apps/api/credentials/service-account.json:/run/secrets/service-account.json:ro

@@ -29,22 +29,29 @@ function headerBlock(head: string[]): { start: number; names: string[] } {
 }
 
 /** Tìm header tự động; các dòng sau header là data, dòng rỗng hoàn toàn bị bỏ qua. */
-export function buildDataset(name: string, values: string[][], syncedAt = new Date().toISOString()): { dataset: Dataset; warnings: number } {
+export function buildDataset(
+  name: string,
+  values: string[][],
+  syncedAt = new Date().toISOString(),
+  opts: { ignoreColumns?: string[] } = {},
+): { dataset: Dataset; warnings: number } {
   const h = detectHeaderRow(values);
   const { start, names } = headerBlock(values[h] ?? []);
+  const ignore = new Set((opts.ignoreColumns ?? []).map((c) => c.trim().toLowerCase()));
+  const keep = names.map((n, i) => i).filter((i) => !ignore.has(names[i]!.toLowerCase()));
   const cell = (r: string[], i: number) => String(r[start + i] ?? '');
-  const rows = values.slice(h + 1).filter((r) => names.some((_, i) => filled(cell(r, i))));
+  const rows = values.slice(h + 1).filter((r) => keep.some((i) => filled(cell(r, i))));
 
-  const columns: Column[] = names.map((n, i) => ({ name: n, type: inferType(rows.map((r) => cell(r, i))) }));
-  columns.forEach((c, i) => {
-    if (c.type === 'string') c.distinct = new Set(rows.map((r) => cell(r, i).trim()).filter(Boolean)).size;
+  const columns: Column[] = keep.map((i) => ({ name: names[i]!, type: inferType(rows.map((r) => cell(r, i))) }));
+  columns.forEach((c, k) => {
+    if (c.type === 'string') c.distinct = new Set(rows.map((r) => cell(r, keep[k]!).trim()).filter(Boolean)).size;
   });
 
   let warnings = 0;
   const out: RecordRow[] = rows.map((r) => {
     const row: RecordRow = {};
-    columns.forEach((c, i) => {
-      const { value, bad } = coerce(cell(r, i), c.type);
+    columns.forEach((c, k) => {
+      const { value, bad } = coerce(cell(r, keep[k]!), c.type);
       if (bad) warnings++;
       row[c.name] = value;
     });

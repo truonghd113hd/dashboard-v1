@@ -10,6 +10,7 @@ const schema = z.object({
   GOOGLE_SHEET_ID: z.string().optional(),
   GOOGLE_SERVICE_ACCOUNT_KEY_FILE: z.string().optional(),
   GOOGLE_SHEET_TABS: z.string().optional(),
+  GOOGLE_SHEET_IGNORE_COLUMNS: z.string().optional(),
   SYNC_INTERVAL_MINUTES: z.coerce.number().positive().default(5),
 });
 
@@ -32,6 +33,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
+      ignoreColumns: (e.GOOGLE_SHEET_IGNORE_COLUMNS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
       intervalMinutes: e.SYNC_INTERVAL_MINUTES,
     },
   };

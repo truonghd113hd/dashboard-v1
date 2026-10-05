@@ -39,7 +39,7 @@ export async function buildApp(config: Config) {
   const sync = new SyncService(
     repo,
     createSheetFetcher(config.sync),
-    { enabled, intervalMinutes: config.sync.intervalMinutes, dataDir: config.dataDir },
+    { enabled, intervalMinutes: config.sync.intervalMinutes, dataDir: config.dataDir, ignoreColumns: config.sync.ignoreColumns },
     { info: (m) => app.log.info(m), error: (e, m) => app.log.error(e, m) },
   );
   await sync.init();
